@@ -1,6 +1,3 @@
-# Original code was provided by GniLudio on Manim discord server
-# Modified by Noah
-# uwezi also helped
 from manim import *
 import typing
 
