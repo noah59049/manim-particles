@@ -30,8 +30,8 @@ TESTS = [
 
 class TestScene(Scene):
     def construct(self):
-        # self.run_all_tests()
-        self.run_test_numbers(23)
+        self.run_all_tests()
+        # self.run_test_numbers(23)
 
     def run_test_numbers(self, *nums):
         for num in nums:
