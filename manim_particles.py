@@ -57,69 +57,56 @@ def _flatten(mob: Mobject) -> VMobject:
     return Union(*leaves)
 
 
-def _to_grid(
-    mob: Mobject,
-    piece_size: float | None,
-    resample: int = Image.Resampling.NEAREST,
-) -> VMobject:
-    stroke_unit = 0.05  # TODO: What does this magic number mean?
-    stroke_offset = stroke_unit * mob.get_stroke_width()
-    width_with_stroke = mob.width + 2 * stroke_offset
-    height_with_stroke = mob.height + 2 * stroke_offset
+def _to_grid(mob: VMobject, cell_size: float = 0.1) -> VMobject:
+    def to_image(mob: VMobject) -> np.ndarray:
+        width = mob.width + 0.01 * mob.get_stroke_width()
+        height = mob.height + 0.01 * mob.get_stroke_width()
+        if not width or not height:
+            return np.zeros((0, 0, 4), dtype=np.uint8)
+        scale = min(config.frame_width / width, config.frame_height / height)
+        mob = mob.copy().scale(scale, scale_stroke=True)
+        img = np.asarray(mob.get_image(Camera(frame_center=mob.get_center(), background_opacity=0)))
+        mask = img[:, :, 3] > 0
+        rows = np.where(np.any(mask, axis=1))[0]
+        cols = np.where(np.any(mask, axis=0))[0]
+        if len(rows) == 0 or len(cols) == 0:
+            return np.zeros((0, 0, 4), dtype=np.uint8)
+        img = img[rows[0] : rows[-1] + 1, cols[0] : cols[-1] + 1]
+        return img
 
-    image = np.asarray(mob.get_image(Camera(background_opacity=0)))
-    image = image[::-1]  # inverts y axis
-
-    # bounding box of content
-    def to_pixel(frame_position: int, frame_size: float, pixel_size: int) -> int:
-        pixel_position = int((frame_position + frame_size / 2) * pixel_size / frame_size)
-        return max(0, min(pixel_size - 1, pixel_position))
-
-    bb_frame = [
-        mob.get_bottom()[1] - stroke_offset,
-        mob.get_top()[1] + stroke_offset,
-        mob.get_left()[0] - stroke_offset,
-        mob.get_right()[0] + stroke_offset,
-    ]
-    bb_pixel = [
-        to_pixel(bb_frame[0], config.frame_height, config.pixel_height),
-        to_pixel(bb_frame[1], config.frame_height, config.pixel_height),
-        to_pixel(bb_frame[2], config.frame_width, config.pixel_width),
-        to_pixel(bb_frame[3], config.frame_width, config.pixel_width),
-    ]
-    image = image[
-        bb_pixel[0] : bb_pixel[1],
-        bb_pixel[2] : bb_pixel[3],
-    ]
-
-    # resize to fit piece_size
-    if piece_size is not None:
-        resolution = (int(height_with_stroke / piece_size), int(width_with_stroke / piece_size))
-        image = np.asarray(
-            Image.fromarray(image).resize((resolution[1], resolution[0]), resample=resample)
-        )
-    else:
-        piece_size = float((bb_frame[1] - bb_frame[0]) / image.shape[0])
-
-    # create grid
-    grid = VGroup(
-        Square(side_length=piece_size)
-        .move_to((bb_frame[2] + piece_size * x, bb_frame[0] + piece_size * y, 0))
-        .set_fill(color=pixel, opacity=1)
-        .set_stroke(width=0.5, color=pixel, opacity=1)
-        for y in range(image.shape[0])
-        for x in range(image.shape[1])
-        if (pixel := ManimColor.from_rgba(image[y, x])) is not None and pixel[3] > 0
+    stroke_one_px = config.frame_width / config.pixel_width * 100
+    stroke_width = 0.01 * mob.get_stroke_width()
+    left, bottom = mob.get_left()[0] - 0.5 * stroke_width, mob.get_bottom()[1] - 0.5 * stroke_width
+    w, h = mob.width + stroke_width, mob.height + stroke_width
+    res = (max(int(w / cell_size), 1), max(1, int(h / cell_size)))
+    img = np.asarray(
+        Image.fromarray(to_image(mob)).resize(size=res, resample=Image.Resampling.NEAREST)
     )
-    return grid
+    c_w, c_h = w / img.shape[1], h / img.shape[0]
+    img = np.flipud(img)
+    rows, cols = np.where(img[:, :, 3] > 0)
+    pixels = img[rows, cols]
+    xs = left + (cols + 0.5) * c_w
+    ys = bottom + (rows + 0.5) * c_h
+    return VGroup(
+        Rectangle(
+            width=c_w,
+            height=c_h,
+            stroke_width=stroke_one_px,
+            color=color,
+            fill_opacity=pixel[3],
+            stroke_opacity=pixel[3],
+        ).move_to((x, y, 0))
+        for x, y, pixel in zip(xs, ys, pixels, strict=True)
+        if (color := ManimColor.from_rgb(pixel[:3])) is not None
+    )
 
 
 class _Scatter(AnimationGroup):
     def __init__(
         self,
         vmobject: VMobject,
-        fill_piece_size: float = 0.05,
-        stroke_piece_size: float = 0.01,
+        piece_size: tuple[float, float] = (0.1, 0.025),
         to_scale: typing.Callable[[], float] | None = lambda: 0,
         to_fade: typing.Callable[[], float] | None = lambda: 1,
         shift_strength: typing.Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
@@ -128,8 +115,10 @@ class _Scatter(AnimationGroup):
         z_shift: typing.Callable[[], float] = lambda: 0,
         **kwargs,
     ) -> None:
-        fill_pieces = _to_grid(vmobject.copy().set_stroke(opacity=0), piece_size=fill_piece_size)
-        stroke_pieces = _to_grid(vmobject.copy().set_fill(opacity=0), piece_size=stroke_piece_size)
+        pieces = [
+            *_to_grid(vmobject.copy().set_stroke(opacity=0), cell_size=piece_size[0]),
+            *_to_grid(vmobject.copy().set_fill(opacity=0), cell_size=piece_size[1]),
+        ]
 
         def animate_piece(piece: VMobject):
             animation = piece.animate.shift(
@@ -145,7 +134,7 @@ class _Scatter(AnimationGroup):
                 animation = animation.fade(to_fade())
             return animation
 
-        animations = (animate_piece(piece) for piece in [*fill_pieces, *stroke_pieces])
+        animations = (animate_piece(piece) for piece in pieces)
         super().__init__(animations, **kwargs)
 
 

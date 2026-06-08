@@ -48,7 +48,13 @@ class TestScene(Scene):
         pass
 
     def test_01_hello(self):
-        text = Text("Hello", font_size=100).set_opacity(0.66).to_edge(UP)
+        text = (
+            Text("Hello", font_size=100)
+            .set_opacity(0.66)
+            .to_edge(UP)
+            .set_stroke(color=[RED, GREEN])
+            .set_fill(color=[BLUE, YELLOW])
+        )
         self.play(Materialize(text))
         self.wait(0.5)
         self.play(Disintegrate(text), run_time=1.4)
