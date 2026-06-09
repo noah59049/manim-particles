@@ -19,12 +19,17 @@ Developed and tested against Manim Community v0.20.1. Requires Python 3.10+.
 from manim import *
 from manim_particles import Disintegrate, Materialize
 
-class Example(Scene):
+class ExampleScene(Scene):
     def construct(self):
-        text = Text("Hello", font_size=120)
+        text = Text(
+            "Hello World",
+            font_size=100,
+            fill_color=[RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE],
+        )
         self.play(Materialize(text))
-        self.wait()
+        self.wait(0.5)
         self.play(Disintegrate(text))
+        self.wait(0.5)
 ```
 
 ## Usage
@@ -43,17 +48,18 @@ self.play(Disintegrate(my_mob, run_time=1.5))
 
 Both classes share the same keyword arguments beyond standard Manim kwargs:
 
-| Parameter | Default | Description |
-|---|---|---|
-| `piece_size` | `0.1` | Side length of each square particle in Manim units |
-| `to_scale` | `lambda: 0` | Callable returning the scale factor each piece shrinks to. `None` to skip. |
-| `to_fade` | `lambda: 1` | Callable returning how much each piece fades (0 = stays, 1 = fully fades). `None` to skip. |
-| `shift_strength` | `lambda: uniform(0.5, 1.5)` | Callable returning the distance each piece travels |
-| `x_shift` | `lambda: sin(uniform(0, 2π))` | Callable returning the x component of travel direction |
-| `y_shift` | `lambda: sin(uniform(0, 2π))` | Callable returning the y component of travel direction |
-| `z_shift` | `lambda: 0` | Callable returning the z component of travel direction |
+|    Parameter     |        Default        |                                           Description                                           |
+|:----------------:|:---------------------:|:-----------------------------------------------------------------------------------------------:|
+|    `vmobject`    |                       |                                  The object to the scattered.                                   |
+|   `piece_size`   |         `0.1`         | The size for each square. A tuple can be passed to handle the fill and stroke areas separately. |
+|    `to_scale`    |          `0`          |                       Callable returning the target scale for each piece.                       |
+|    `to_fade`     |          `1`          |                       Callable returning the target fade for each piece.                        |
+| `shift_strength` |  `uniform(0.5, 1.5)`  |                     Callable returning the travel distance for each piece.                      |
+|    `x_shift`     | `sin(uniform(0, 2π))` |                    Callable returning the shift x-component for each piece.                     |
+|    `y_shift`     | `sin(uniform(0, 2π))` |                    Callable returning the shift y-component for each piece.                     |
 
-All callables are invoked independently per particle, so passing a lambda with `random` gives a different value for each piece.
+
+All callables are invoked independently per piece, so passing a lambda with `random` gives a different value for each piece.
 
 ### Examples
 
@@ -81,15 +87,18 @@ Works with any 2D `VMobject` or `VGroup`, including:
 - **Open paths** — `Line`, `Arrow`, `CurvedArrow`, `FunctionGraph`, …
 - **Compound objects** — `Axes`, `NumberLine`, `VGroup` of mixed shapes
 - **Semi-transparent objects** — opacity is preserved per particle
+- ...
 
 Does not work with 3D objects.
 
 ## How it works
 
-1. The object is flattened to a single filled union using boolean operations. Stroke-only paths are converted to thin filled strip polygons first.
-2. A grid of square particles is produced by intersecting the union with axis-aligned cells.
-3. Each particle's color and opacity are sampled from a rendered image of the original object (`vmobject.get_image()`), so multicolor gradients are reproduced faithfully.
-4. `Disintegrate` hides the original object at frame 0 and animates the particles outward. `Materialize` runs the same animation in reverse, then reveals the object at the last frame.
+1. Prerenders the object with either the fill or the stroke area.
+2. Resizes the rendered image to match the size of grid.
+3. Creates the grid out of `Square`s.
+    * Skips pixels where the prerendered image doesn't have a color.
+    * Sets the color based on the pixel in the rendered image.
+4. Animates each square.
 
 ## Credits
 

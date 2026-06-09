@@ -1,11 +1,11 @@
 from manim import *
-import typing
+from typing import Callable
 from PIL import Image
 
 __all__ = ["Disintegrate", "Materialize"]
 
 
-def to_grid(mob: VMobject, cell_size: float) -> VMobject:
+def _to_grid(mob: VMobject, cell_size: float) -> VMobject:
     stroke_one_px = config.frame_width / config.pixel_width * 100
     stroke_width = 0.01 * mob.get_stroke_width()
     left, right, bottom, top = (
@@ -17,7 +17,7 @@ def to_grid(mob: VMobject, cell_size: float) -> VMobject:
     width, height = right - left, top - bottom
     resolution = (max(int(width / cell_size), 1), max(1, int(height / cell_size)))
     image = np.asarray(
-        Image.fromarray(to_image(mob)).resize(size=resolution, resample=Image.Resampling.NEAREST)
+        Image.fromarray(_to_image(mob)).resize(size=resolution, resample=Image.Resampling.NEAREST)
     )
     cell_height, cell_width = height / image.shape[0], width / image.shape[1]
     image = np.flipud(image)
@@ -36,7 +36,7 @@ def to_grid(mob: VMobject, cell_size: float) -> VMobject:
     )
 
 
-def to_image(mob: VMobject) -> np.ndarray:
+def _to_image(mob: VMobject) -> np.ndarray:
     stroke_offset = 0.5 * 0.01 * mob.get_stroke_width()
     width = mob.width + 2 * stroke_offset
     height = mob.height + 2 * stroke_offset
@@ -53,30 +53,62 @@ def to_image(mob: VMobject) -> np.ndarray:
 
 
 class _Scatter(AnimationGroup):
+    """The scatter animation.
+
+    Parameters
+    ----------
+    vmobject : VMobject
+        The object to the scattered.
+    piece_size: float | tuple[float, float]
+        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `0.1`.
+    to_scale : Callable[[], float]
+        The target scale factor for each piece. Defaults to `0`.
+    to_fade : Callable[[], float]
+        The target fade for each piece. Defaults to `1`.
+    shift_strength : Callable[[], float]
+        The shift strength for each piece. Defaults to `np.random.uniform(0.5, 1.5)`.
+    x_shift : Callable[[], float]
+        How much a piece shifts in the x-direction. Defaults to `lambda:np.sin(np.random.uniform(0, 2 * PI))`
+    y_shift : Callable[[], float]
+        How much a piece shifts in the y-direction. Defaults to `np.sin(np.random.uniform(0, 2 * PI))`
+    reverse : bool
+        Whether to play the animation in reverse. Defaults to `False`.
+    """
+
     def __init__(
         self,
         vmobject: VMobject,
-        fill_piece_size: float = 0.1,
-        stroke_piece_size: float = 0.025,
-        to_scale: typing.Callable[[], float] | None = lambda: 0,
-        to_fade: typing.Callable[[], float] | None = lambda: 1,
-        shift_strength: typing.Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
-        x_shift: typing.Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
-        y_shift: typing.Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
-        z_shift: typing.Callable[[], float] = lambda: 0,
+        piece_size: float | tuple[float, float] = 0.1,
+        to_scale: Callable[[], float] | None = lambda: 0,
+        to_fade: Callable[[], float] | None = lambda: 1,
+        shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
+        x_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
+        y_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
+        reverse: bool = False,
         **kwargs,
     ) -> None:
-        pieces = [
-            *to_grid(vmobject.copy().set_stroke(opacity=0), cell_size=fill_piece_size),
-            *to_grid(vmobject.copy().set_fill(opacity=0), cell_size=stroke_piece_size),
-        ]
+        self.vmobject = vmobject
+        self.reverse = reverse
+        if reverse:
+            rate_func = kwargs.get("rate_func", linear)
+            kwargs["rate_func"] = lambda t: 1 - rate_func(t)
+
+        if isinstance(piece_size, tuple):
+            self.pieces = [
+                *_to_grid(vmobject.copy().set_stroke(opacity=0), cell_size=piece_size[0]),
+                *_to_grid(vmobject.copy().set_fill(opacity=0), cell_size=piece_size[1]),
+            ]
+        else:
+            self.pieces = [
+                *_to_grid(vmobject.copy().set_stroke(opacity=0), cell_size=piece_size),
+            ]
 
         def animate_piece(piece: VMobject):
             animation = piece.animate.shift(
                 (
                     shift_strength() * x_shift(),
                     shift_strength() * y_shift(),
-                    shift_strength() * z_shift(),
+                    0,
                 )
             )
             if to_scale is not None:
@@ -85,31 +117,108 @@ class _Scatter(AnimationGroup):
                 animation = animation.fade(to_fade())
             return animation
 
-        animations = (animate_piece(piece) for piece in pieces)
+        animations = [animate_piece(piece) for piece in self.pieces]
         super().__init__(animations, **kwargs)
 
-
-class Disintegrate(_Scatter):
-    def __init__(self, vmobject: VMobject, **kwargs) -> None:
-        self.vmobject = vmobject
-        super().__init__(vmobject, **kwargs)
-
     def begin(self) -> None:
-        self.vmobject.set_opacity(0)
+        if not self.reverse:
+            self.vmobject.set_opacity(0)
         super().begin()
 
     def clean_up_from_scene(self, scene: Scene) -> None:
-        scene.remove(self.vmobject)
+        if not self.reverse:
+            scene.remove(self.vmobject)
+        else:
+            scene.add(self.vmobject)
+
         super().clean_up_from_scene(scene)
 
 
-class Materialize(_Scatter):
-    def __init__(self, vmobject: VMobject, **kwargs) -> None:
-        rate_func = kwargs.get("rate_func", linear)
-        kwargs["rate_func"] = lambda t: 1 - rate_func(t)
-        self.vmobject = vmobject
-        super().__init__(vmobject, **kwargs)
+class Disintegrate(_Scatter):
+    """Disintegrates an object into small pieces.
 
-    def clean_up_from_scene(self, scene: Scene) -> None:
-        scene.add(self.vmobject)
-        return super().clean_up_from_scene(scene)
+    Parameters
+    ----------
+    vmobject : VMobject
+        The object to the scattered.
+    piece_size: float | tuple[float, float]
+        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `0.1`.
+    to_scale : Callable[[], float]
+        The target scale factor for each piece. Defaults to `0`.
+    to_fade : Callable[[], float]
+        The target fade for each piece. Defaults to `1`.
+    shift_strength : Callable[[], float]
+        The shift strength for each piece. Defaults to `np.random.uniform(0.5, 1.5)`.
+    x_shift : Callable[[], float]
+        How much a piece shifts in the x-direction. Defaults to `lambda:np.sin(np.random.uniform(0, 2 * PI))`
+    y_shift : Callable[[], float]
+        How much a piece shifts in the y-direction. Defaults to `np.sin(np.random.uniform(0, 2 * PI))`
+    """
+
+    def __init__(
+        self,
+        vmobject: VMobject,
+        piece_size: float | tuple[float, float] = 0.1,
+        to_scale: Callable[[], float] | None = lambda: 0,
+        to_fade: Callable[[], float] | None = lambda: 1,
+        shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
+        x_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
+        y_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            vmobject=vmobject,
+            piece_size=piece_size,
+            to_scale=to_scale,
+            to_fade=to_fade,
+            shift_strength=shift_strength,
+            x_shift=x_shift,
+            y_shift=y_shift,
+            reverse=False,
+            **kwargs,
+        )
+
+
+class Materialize(_Scatter):
+    """Materializes an object from small pieces.
+
+    Parameters
+    ----------
+    vmobject : VMobject
+        The object to the scattered.
+    piece_size: float | tuple[float, float]
+        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `0.1`.
+    to_scale : Callable[[], float]
+        The target scale factor for each piece. Defaults to `0`.
+    to_fade : Callable[[], float]
+        The target fade for each piece. Defaults to `1`.
+    shift_strength : Callable[[], float]
+        The shift strength for each piece. Defaults to `np.random.uniform(0.5, 1.5)`.
+    x_shift : Callable[[], float]
+        How much a piece shifts in the x-direction. Defaults to `lambda:np.sin(np.random.uniform(0, 2 * PI))`
+    y_shift : Callable[[], float]
+        How much a piece shifts in the y-direction. Defaults to `np.sin(np.random.uniform(0, 2 * PI))`
+    """
+
+    def __init__(
+        self,
+        vmobject: VMobject,
+        piece_size: float | tuple[float, float] = 0.1,
+        to_scale: Callable[[], float] | None = lambda: 0,
+        to_fade: Callable[[], float] | None = lambda: 1,
+        shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
+        x_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
+        y_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            vmobject=vmobject,
+            piece_size=piece_size,
+            to_scale=to_scale,
+            to_fade=to_fade,
+            shift_strength=shift_strength,
+            x_shift=x_shift,
+            y_shift=y_shift,
+            reverse=True,
+            **kwargs,
+        )
