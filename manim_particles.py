@@ -65,8 +65,8 @@ class _Scatter(AnimationGroup):
         The target scale factor for each piece. Defaults to `0`.
     to_fade : Callable[[], float]
         The target fade for each piece. Defaults to `1`.
-    shift_strength : Callable[[], float]
-        The shift strength for each piece. Defaults to `np.random.uniform(0.5, 1.5)`.
+    scatter_distance : Callable[[], float]
+        The distance each particle moves. Defaults to `np.random.uniform(0.5, 1.5)`.
     x_shift : Callable[[], float]
         How much a piece shifts in the x-direction. Defaults to `lambda:np.sin(np.random.uniform(0, 2 * PI))`
     y_shift : Callable[[], float]
@@ -81,7 +81,7 @@ class _Scatter(AnimationGroup):
         piece_size: float | tuple[float, float] = (0.1, 0.025),
         to_scale: Callable[[], float] | None = lambda: 0,
         to_fade: Callable[[], float] | None = lambda: 1,
-        shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
+        scatter_distance: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
         x_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
         y_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
         reverse: bool = False,
@@ -106,8 +106,8 @@ class _Scatter(AnimationGroup):
         def animate_piece(piece: VMobject):
             animation = piece.animate.shift(
                 (
-                    shift_strength() * x_shift(),
-                    shift_strength() * y_shift(),
+                    scatter_distance() * x_shift(),
+                    scatter_distance() * y_shift(),
                     0,
                 )
             )
@@ -147,8 +147,8 @@ class Disintegrate(_Scatter):
         The target scale factor for each piece. Defaults to `0`.
     to_fade : Callable[[], float]
         The target fade for each piece. Defaults to `1`.
-    shift_strength : Callable[[], float]
-        The shift strength for each piece. Defaults to `np.random.uniform(0.5, 1.5)`.
+    scatter_distance : Callable[[], float]
+        The distance each particle moves. Defaults to `np.random.uniform(0.5, 1.5)`.
     x_shift : Callable[[], float]
         How much a piece shifts in the x-direction. Defaults to `lambda:np.sin(np.random.uniform(0, 2 * PI))`
     y_shift : Callable[[], float]
@@ -161,7 +161,7 @@ class Disintegrate(_Scatter):
         piece_size: float | tuple[float, float] = (0.1, 0.025),
         to_scale: Callable[[], float] | None = lambda: 0,
         to_fade: Callable[[], float] | None = lambda: 1,
-        shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
+        scatter_distance: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
         x_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
         y_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
         **kwargs,
@@ -171,7 +171,7 @@ class Disintegrate(_Scatter):
             piece_size=piece_size,
             to_scale=to_scale,
             to_fade=to_fade,
-            shift_strength=shift_strength,
+            scatter_distance=scatter_distance,
             x_shift=x_shift,
             y_shift=y_shift,
             reverse=False,
@@ -192,8 +192,8 @@ class Materialize(_Scatter):
         The target scale factor for each piece. Defaults to `0`.
     to_fade : Callable[[], float]
         The target fade for each piece. Defaults to `1`.
-    shift_strength : Callable[[], float]
-        The shift strength for each piece. Defaults to `np.random.uniform(0.5, 1.5)`.
+    scatter_distance : Callable[[], float]
+        The distance each particle moves. Defaults to `np.random.uniform(0.5, 1.5)`.
     x_shift : Callable[[], float]
         How much a piece shifts in the x-direction. Defaults to `lambda:np.sin(np.random.uniform(0, 2 * PI))`
     y_shift : Callable[[], float]
@@ -206,7 +206,7 @@ class Materialize(_Scatter):
         piece_size: float | tuple[float, float] = (0.1, 0.025),
         to_scale: Callable[[], float] | None = lambda: 0,
         to_fade: Callable[[], float] | None = lambda: 1,
-        shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
+        scatter_distance: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
         x_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
         y_shift: Callable[[], float] = lambda: np.sin(np.random.uniform(0, 2 * PI)),
         **kwargs,
@@ -216,7 +216,7 @@ class Materialize(_Scatter):
             piece_size=piece_size,
             to_scale=to_scale,
             to_fade=to_fade,
-            shift_strength=shift_strength,
+            scatter_distance=scatter_distance,
             x_shift=x_shift,
             y_shift=y_shift,
             reverse=True,
