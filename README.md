@@ -32,6 +32,8 @@ class ExampleScene(Scene):
         self.wait(0.5)
 ```
 
+[Example Scene](https://github.com/user-attachments/assets/fdfa3e8c-6c97-4795-967a-f618aa5c7886)
+
 ## Usage
 
 Both classes accept any `VMobject` or `VGroup` and all standard Manim animation kwargs (`run_time`, `rate_func`, `lag_ratio`, …).
