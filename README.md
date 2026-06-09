@@ -56,7 +56,7 @@ Both classes share the same keyword arguments beyond standard Manim kwargs:
 |   `piece_size`   |         `0.1`         | The size for each square. A tuple can be passed to handle the fill and stroke areas separately. |
 |    `to_scale`    |          `0`          |                       Callable returning the target scale for each piece.                       |
 |    `to_fade`     |          `1`          |                       Callable returning the target fade for each piece.                        |
-| `shift_strength` |  `uniform(0.5, 1.5)`  |                     Callable returning the travel distance for each piece.                      |
+| `scatter_distance` |  `uniform(0.5, 1.5)`  |                     Callable returning the travel distance for each piece.                      |
 |    `x_shift`     | `sin(uniform(0, 2π))` |                    Callable returning the shift x-component for each piece.                     |
 |    `y_shift`     | `sin(uniform(0, 2π))` |                    Callable returning the shift y-component for each piece.                     |
 
@@ -76,7 +76,7 @@ self.play(Disintegrate(mob, y_shift=lambda: 1, x_shift=lambda: 0))
 self.play(Disintegrate(mob, to_scale=None, to_fade=None))
 
 # Pieces explode outward with more spread
-self.play(Disintegrate(mob, shift_strength=lambda: np.random.uniform(2, 4)))
+self.play(Disintegrate(mob, scatter_distance=lambda: np.random.uniform(2, 4)))
 ```
 
 ## Supported object types
@@ -104,5 +104,5 @@ Does not work with 3D objects.
 
 ## Credits
 
-Created by [Noah](https://github.com/noah59049) and [GniLudio](https://github.com/GniLudio)
+Created by [Noah](https://github.com/noah59049) and [GniLudio](https://github.com/GniLudio).
 Additional contributions by uwezi.
