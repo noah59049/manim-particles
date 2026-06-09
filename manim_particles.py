@@ -1,5 +1,3 @@
-import math
-
 from manim import *
 import typing
 from PIL import Image
@@ -7,27 +5,34 @@ from PIL import Image
 __all__ = ["Disintegrate", "Materialize"]
 
 
-def to_grid(mob: VMobject, cell_size: float = 0.1) -> VMobject:
+def to_grid(mob: VMobject, cell_size: float) -> VMobject:
     stroke_one_px = config.frame_width / config.pixel_width * 100
     stroke_width = 0.01 * mob.get_stroke_width()
-    left, bottom = mob.get_left()[0] - 0.5 * stroke_width, mob.get_bottom()[1] - 0.5 * stroke_width
-    width, height = mob.width + stroke_width, mob.height + stroke_width
-    res = (max(int(width / cell_size), 1), max(1, int(height / cell_size)))
-    img = np.asarray(
-        Image.fromarray(to_image(mob)).resize(size=res, resample=Image.Resampling.NEAREST)
+    left, right, bottom, top = (
+        mob.get_left()[0] - 0.5 * stroke_width,
+        mob.get_right()[0] + 0.5 * stroke_width,
+        mob.get_bottom()[1] - 0.5 * stroke_width,
+        mob.get_top()[1] + 0.5 * stroke_width,
     )
-    img = np.flipud(img)
+    width, height = right - left, top - bottom
+    resolution = (max(int(width / cell_size), 1), max(1, int(height / cell_size)))
+    image = np.asarray(
+        Image.fromarray(to_image(mob)).resize(size=resolution, resample=Image.Resampling.NEAREST)
+    )
+    cell_height, cell_width = height / image.shape[0], width / image.shape[1]
+    image = np.flipud(image)
     return VGroup(
-        Square(
-            side_length=cell_size,
+        Rectangle(
+            width=cell_height,
+            height=cell_width,
             stroke_width=stroke_one_px,
             color=ManimColor.from_rgba(pixel),
             fill_opacity=pixel[3],
             stroke_opacity=pixel[3],
-        ).move_to((left + (x + 0.5) * cell_size, bottom + (y + 0.5) * cell_size, 0))
-        for y in range(img.shape[0])
-        for x in range(img.shape[1])
-        if (pixel := img[y, x]) is not None and pixel[3] > 0
+        ).move_to((left + (x + 0.5) * cell_width, bottom + (y + 0.5) * cell_height, 0))
+        for y in range(image.shape[0])
+        for x in range(image.shape[1])
+        if (pixel := image[y, x]) is not None and pixel[3] > 0
     )
 
 
@@ -37,22 +42,14 @@ def to_image(mob: VMobject) -> np.ndarray:
     height = mob.height + 2 * stroke_offset
     if not width or not height:
         return np.zeros((0, 0, 4), dtype=np.uint8)
-
-    img = np.asarray(
-        mob.get_image(
-            Camera(
-                frame_center=mob.get_center(),
-                background_opacity=0,
-            )
-        )
-    )
+    image = np.asarray(mob.get_image(Camera(frame_center=mob.get_center(), background_opacity=0)))
     width_px = width * config.pixel_width / config.frame_width
     height_px = height * config.pixel_height / config.frame_height
-    img = img[
-        int((img.shape[0] - height_px) / 2) : int((img.shape[0] + height_px) / 2),
-        int((img.shape[1] - width_px) / 2) : int((img.shape[1] + width_px) / 2),
+    image = image[
+        int((image.shape[0] - height_px) / 2) : int((image.shape[0] + height_px) / 2),
+        int((image.shape[1] - width_px) / 2) : int((image.shape[1] + width_px) / 2),
     ]
-    return img
+    return image
 
 
 class _Scatter(AnimationGroup):
