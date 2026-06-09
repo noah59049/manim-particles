@@ -60,7 +60,7 @@ class _Scatter(AnimationGroup):
     vmobject : VMobject
         The object to the scattered.
     piece_size: float | tuple[float, float]
-        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `0.1`.
+        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `(0.1, 0.025)`.
     to_scale : Callable[[], float]
         The target scale factor for each piece. Defaults to `0`.
     to_fade : Callable[[], float]
@@ -78,7 +78,7 @@ class _Scatter(AnimationGroup):
     def __init__(
         self,
         vmobject: VMobject,
-        piece_size: float | tuple[float, float] = 0.1,
+        piece_size: float | tuple[float, float] = (0.1, 0.025),
         to_scale: Callable[[], float] | None = lambda: 0,
         to_fade: Callable[[], float] | None = lambda: 1,
         shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
@@ -142,7 +142,7 @@ class Disintegrate(_Scatter):
     vmobject : VMobject
         The object to the scattered.
     piece_size: float | tuple[float, float]
-        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `0.1`.
+        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `(0.1, 0.025)`.
     to_scale : Callable[[], float]
         The target scale factor for each piece. Defaults to `0`.
     to_fade : Callable[[], float]
@@ -158,7 +158,7 @@ class Disintegrate(_Scatter):
     def __init__(
         self,
         vmobject: VMobject,
-        piece_size: float | tuple[float, float] = 0.1,
+        piece_size: float | tuple[float, float] = (0.1, 0.025),
         to_scale: Callable[[], float] | None = lambda: 0,
         to_fade: Callable[[], float] | None = lambda: 1,
         shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
@@ -187,7 +187,7 @@ class Materialize(_Scatter):
     vmobject : VMobject
         The object to the scattered.
     piece_size: float | tuple[float, float]
-        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `0.1`.
+        The piece size. A tuple can be passed to handle the fill and stroke area separately. Defaults to `(0.1, 0.025)`.
     to_scale : Callable[[], float]
         The target scale factor for each piece. Defaults to `0`.
     to_fade : Callable[[], float]
@@ -203,7 +203,7 @@ class Materialize(_Scatter):
     def __init__(
         self,
         vmobject: VMobject,
-        piece_size: float | tuple[float, float] = 0.1,
+        piece_size: float | tuple[float, float] = (0.1, 0.025),
         to_scale: Callable[[], float] | None = lambda: 0,
         to_fade: Callable[[], float] | None = lambda: 1,
         shift_strength: Callable[[], float] = lambda: np.random.uniform(0.5, 1.5),
