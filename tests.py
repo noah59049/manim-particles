@@ -26,6 +26,28 @@ TESTS = [
     "test_21_stroke_circles_multicolor",
     "test_22_stroke_shapes_multicolor",
     "test_23_stroke_lines_multicolor",
+    # piece_size
+    "test_24_piece_size_float",
+    "test_25_piece_size_coarse",
+    "test_26_piece_size_fine",
+    "test_27_piece_size_tuple",
+    # to_scale
+    "test_28_to_scale_none",
+    "test_29_to_scale_grow",
+    "test_30_to_scale_no_change",
+    # to_fade
+    "test_31_to_fade_none",
+    "test_32_to_fade_partial",
+    # scatter_distance
+    "test_33_scatter_distance_large",
+    "test_34_scatter_distance_small",
+    "test_35_scatter_distance_fixed",
+    # x_shift / y_shift
+    "test_36_x_shift_only",
+    "test_37_y_shift_only",
+    "test_38_directional_scatter",
+    # combined
+    "test_39_drift_only",
 ]
 
 
@@ -45,7 +67,7 @@ class ExampleScene(Scene):
 class TestScene(Scene):
     def construct(self):
         self.run_all_tests()
-        # self.run_test_numbers(23)
+        # self.run_test_numbers(*range(24,40))
 
     def run_test_numbers(self, *nums):
         for num in nums:
@@ -302,6 +324,146 @@ class TestScene(Scene):
         self.play(Materialize(lines))
         self.wait(0.5)
         self.play(Disintegrate(lines))
+        self.wait(0.5)
+
+    # ---- piece_size ----
+
+    def test_24_piece_size_float(self):
+        # piece_size as a single float (no fill/stroke split)
+        shape = Square(fill_opacity=0.7).set_fill(TEAL).set_stroke(WHITE, width=4)
+        self.play(Materialize(shape, piece_size=0.1))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, piece_size=0.1))
+        self.wait(0.5)
+
+    def test_25_piece_size_coarse(self):
+        # large pieces — visible chunky blocks
+        shape = Circle(fill_opacity=1).scale(1.5).set_fill(ORANGE).set_stroke(width=0)
+        self.play(Materialize(shape, piece_size=0.4))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, piece_size=0.4))
+        self.wait(0.5)
+
+    def test_26_piece_size_fine(self):
+        # tiny pieces — dense particle dust
+        shape = Square(fill_opacity=1).scale(1.5).set_fill(RED_C).set_stroke(width=0)
+        self.play(Materialize(shape, piece_size=0.03))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, piece_size=0.03))
+        self.wait(0.5)
+
+    def test_27_piece_size_tuple(self):
+        # explicit (fill_size, stroke_size) tuple — coarse fill, fine stroke
+        shape = RegularPolygon(n=6).scale(1.5).set_fill(BLUE_C, opacity=0.8).set_stroke(YELLOW, width=6)
+        self.play(Materialize(shape, piece_size=(0.2, 0.04)))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, piece_size=(0.2, 0.04)))
+        self.wait(0.5)
+
+    # ---- to_scale ----
+
+    def test_28_to_scale_none(self):
+        # to_scale=None: pieces don't shrink or grow, only move and fade
+        shape = Star(n=5, outer_radius=1.5).set_fill(GOLD, opacity=1).set_stroke(width=0)
+        self.play(Materialize(shape, to_scale=None))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, to_scale=None))
+        self.wait(0.5)
+
+    def test_29_to_scale_grow(self):
+        # to_scale > 1: pieces expand as they scatter
+        shape = Circle(fill_opacity=1).scale(1.2).set_fill(PURPLE).set_stroke(width=0)
+        self.play(Materialize(shape, to_scale=lambda: 3.0))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, to_scale=lambda: 3.0))
+        self.wait(0.5)
+
+    def test_30_to_scale_no_change(self):
+        # to_scale=lambda: 1: pieces maintain their size while moving and fading
+        shape = Square(fill_opacity=1).set_fill(GREEN_C).set_stroke(width=0)
+        self.play(Materialize(shape, to_scale=lambda: 1))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, to_scale=lambda: 1))
+        self.wait(0.5)
+
+    # ---- to_fade ----
+
+    def test_31_to_fade_none(self):
+        # to_fade=None: pieces don't fade — they scatter and stay fully opaque
+        shape = Triangle().scale(1.5).set_fill(MAROON, opacity=1).set_stroke(width=0)
+        self.play(Materialize(shape, to_fade=None))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, to_fade=None))
+        self.wait(0.5)
+
+    def test_32_to_fade_partial(self):
+        # to_fade=0.4: pieces only partially fade (60% opacity remains)
+        shape = Circle(fill_opacity=1).scale(1.5).set_fill(PINK).set_stroke(width=0)
+        self.play(Materialize(shape, to_fade=lambda: 0.4))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, to_fade=lambda: 0.4))
+        self.wait(0.5)
+
+    # ---- scatter_distance ----
+
+    def test_33_scatter_distance_large(self):
+        # pieces fly far off screen
+        shape = Text("Boom", font_size=100).set_opacity(0.8)
+        self.play(Materialize(shape, scatter_distance=lambda: 5.0))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, scatter_distance=lambda: 5.0))
+        self.wait(0.5)
+
+    def test_34_scatter_distance_small(self):
+        # pieces barely drift — tight cloud that barely separates
+        shape = Square(fill_opacity=1).set_fill(BLUE_C).set_stroke(width=0)
+        self.play(Materialize(shape, scatter_distance=lambda: 0.1))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, scatter_distance=lambda: 0.1))
+        self.wait(0.5)
+
+    def test_35_scatter_distance_fixed(self):
+        # all pieces travel the exact same distance (uniform ring)
+        shape = Circle(fill_opacity=1).scale(1.3).set_fill(TEAL).set_stroke(width=0)
+        self.play(Materialize(shape, scatter_distance=lambda: 2.0))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, scatter_distance=lambda: 2.0))
+        self.wait(0.5)
+
+    # ---- x_shift / y_shift ----
+
+    def test_36_x_shift_only(self):
+        # y_shift=0: pieces only move horizontally
+        shape = RegularPolygon(n=5).scale(1.5).set_fill(ORANGE, opacity=0.9).set_stroke(width=0)
+        self.play(Materialize(shape, y_shift=lambda: 0))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, y_shift=lambda: 0))
+        self.wait(0.5)
+
+    def test_37_y_shift_only(self):
+        # x_shift=0: pieces only move vertically
+        shape = RegularPolygon(n=5).scale(1.5).set_fill(GOLD, opacity=0.9).set_stroke(width=0)
+        self.play(Materialize(shape, x_shift=lambda: 0))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, x_shift=lambda: 0))
+        self.wait(0.5)
+
+    def test_38_directional_scatter(self):
+        # all pieces fly in the same direction (up and to the right)
+        shape = MathTex(r"\vec{F} = m\vec{a}").scale(2.5)
+        self.play(Materialize(shape, x_shift=lambda: 1, y_shift=lambda: 1))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, x_shift=lambda: 1, y_shift=lambda: 1))
+        self.wait(0.5)
+
+    # ---- combined ----
+
+    def test_39_drift_only(self):
+        # to_fade=None, to_scale=None: pieces only drift, no fading or scaling
+        shape = Star(n=6, outer_radius=1.5).set_fill(PURE_GREEN, opacity=0.9).set_stroke(width=0)
+        self.play(Materialize(shape, to_fade=None, to_scale=None))
+        self.wait(0.5)
+        self.play(Disintegrate(shape, to_fade=None, to_scale=None))
         self.wait(0.5)
 
 
