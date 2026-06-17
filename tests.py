@@ -55,13 +55,13 @@ TESTS = [
 
 class TestScene(Scene):
     def construct(self):
-        # self.run_test_numbers(40)
-        self.run_all_tests()
-        # self.run_test_numbers(*range(24,40))
+        self.run_test_numbers(2)
 
     def run_test_numbers(self, *nums):
         for num in nums:
-            getattr(self, TESTS[num])()
+            test_name = TESTS[num]
+            self.add(Text(test_name, font_size = 20).to_corner(UR, buff=DEFAULT_MOBJECT_TO_EDGE_BUFFER / 3))
+            getattr(self, test_name)()
             self.clear()
 
     def run_all_tests(self):
