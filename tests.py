@@ -68,7 +68,7 @@ class TestScene(Scene):
             self.run_test_number(num)
 
     def run_all_tests(self):
-        for i, _ in TESTS:
+        for i, _ in enumerate(TESTS):
             self.run_test_number(i)
 
     def test_00_null_test(self):
