@@ -6,7 +6,6 @@ __all__ = ["Disintegrate", "Materialize"]
 
 
 def _to_grid(mob: VMobject, cell_size: float) -> VMobject:
-    stroke_one_px = config.frame_width / config.pixel_width * 100
     stroke_width = 0.01 * mob.get_stroke_width()
     left, right, bottom, top = (
         mob.get_left()[0] - 0.5 * stroke_width,
@@ -25,10 +24,9 @@ def _to_grid(mob: VMobject, cell_size: float) -> VMobject:
         Rectangle(
             width=cell_height,
             height=cell_width,
-            stroke_width=stroke_one_px,
-            color=ManimColor.from_rgba(pixel),
+            stroke_width=0,
+            fill_color=ManimColor.from_rgba(np.array([pixel[0], pixel[1], pixel[2], 255], dtype=np.uint8)),
             fill_opacity=pixel[3] / 255,
-            stroke_opacity=pixel[3] / 255,
         ).move_to((left + (x + 0.5) * cell_width, bottom + (y + 0.5) * cell_height, 0))
         for y in range(image.shape[0])
         for x in range(image.shape[1])
