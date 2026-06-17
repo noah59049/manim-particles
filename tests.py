@@ -57,17 +57,19 @@ class TestScene(Scene):
     def construct(self):
         self.run_all_tests()
 
+    def run_test_number(self, num):
+        test_name = TESTS[num]
+        self.add(Text(test_name, font_size = 20).to_corner(UR, buff=DEFAULT_MOBJECT_TO_EDGE_BUFFER / 3))
+        getattr(self, test_name)()
+        self.clear()
+
     def run_test_numbers(self, *nums):
         for num in nums:
-            test_name = TESTS[num]
-            self.add(Text(test_name, font_size = 20).to_corner(UR, buff=DEFAULT_MOBJECT_TO_EDGE_BUFFER / 3))
-            getattr(self, test_name)()
-            self.clear()
+            self.run_test_number(num)
 
     def run_all_tests(self):
-        for name in TESTS:
-            getattr(self, name)()
-            self.clear()
+        for i, _ in TESTS:
+            self.run_test_number(i)
 
     def test_00_null_test(self):
         pass
