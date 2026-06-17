@@ -320,6 +320,7 @@ class TestScene(Scene):
 
     def test_24_piece_size_float(self):
         # piece_size as a single float (no fill/stroke split)
+        # The border (which I think is 4 * 0.01) is too small to be picked up by the pieces
         shape = Square(fill_opacity=0.7).set_fill(TEAL).set_stroke(WHITE, width=4)
         self.play(Materialize(shape, piece_size=0.1))
         self.wait(0.5)
