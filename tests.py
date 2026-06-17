@@ -48,6 +48,8 @@ TESTS = [
     "test_38_directional_scatter",
     # combined
     "test_39_drift_only",
+    # pieces in place, fade
+    "test_40_fade_text_no_shift",
 ]
 
 
@@ -66,6 +68,7 @@ class ExampleScene(Scene):
 
 class TestScene(Scene):
     def construct(self):
+        # self.run_test_numbers(40)
         self.run_all_tests()
         # self.run_test_numbers(*range(24,40))
 
@@ -465,6 +468,18 @@ class TestScene(Scene):
         self.wait(0.5)
         self.play(Disintegrate(shape, to_fade=None, to_scale=None))
         self.wait(0.5)
+
+    def test_40_fade_text_no_shift(self):
+        mob = Text("Hello World")
+        self.play(
+            Disintegrate(
+                mob,
+                piece_size=0.025,
+                scatter_distance=lambda: 0,
+                to_fade=lambda: 1,
+                to_scale=None,
+            )
+        )
 
 
 # --- Check that TESTS array is correct ---
