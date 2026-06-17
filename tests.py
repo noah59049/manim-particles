@@ -55,7 +55,7 @@ TESTS = [
 
 class TestScene(Scene):
     def construct(self):
-        self.run_test_numbers(2)
+        self.run_all_tests()
 
     def run_test_numbers(self, *nums):
         for num in nums:

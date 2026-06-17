@@ -5,6 +5,18 @@ from PIL import Image
 __all__ = ["Disintegrate", "Materialize"]
 
 
+def _straight_alpha_color(pixel: np.ndarray) -> ManimColor:
+    # Cairo produces premultiplied-alpha pixels: RGB values are scaled down by A/255.
+    # Divide out the alpha to recover the original color before passing to manim.
+    a = int(pixel[3])
+    return ManimColor.from_rgba(np.array([
+        min(int(pixel[0]) * 255 // a, 255),
+        min(int(pixel[1]) * 255 // a, 255),
+        min(int(pixel[2]) * 255 // a, 255),
+        255,
+    ], dtype=np.uint8))
+
+
 def _to_grid(mob: VMobject, cell_size: float) -> VMobject:
     stroke_width = 0.01 * mob.get_stroke_width()
     left, right, bottom, top = (
@@ -25,7 +37,7 @@ def _to_grid(mob: VMobject, cell_size: float) -> VMobject:
             width=cell_height,
             height=cell_width,
             stroke_width=0,
-            fill_color=ManimColor.from_rgba(np.array([pixel[0], pixel[1], pixel[2], 255], dtype=np.uint8)),
+            fill_color=_straight_alpha_color(pixel),
             fill_opacity=pixel[3] / 255,
         ).move_to((left + (x + 0.5) * cell_width, bottom + (y + 0.5) * cell_height, 0))
         for y in range(image.shape[0])
