@@ -50,21 +50,8 @@ TESTS = [
     "test_39_drift_only",
     # pieces in place, fade
     "test_40_fade_text_no_shift",
+    "test_41_hello_world_example_scene",
 ]
-
-
-class ExampleScene(Scene):
-    def construct(self):
-        text = Text(
-            "Hello World",
-            font_size=100,
-            fill_color=[RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE],
-        )
-        self.play(Materialize(text))
-        self.wait(0.5)
-        self.play(Disintegrate(text))
-        self.wait(0.5)
-
 
 class TestScene(Scene):
     def construct(self):
@@ -480,6 +467,17 @@ class TestScene(Scene):
                 to_scale=None,
             )
         )
+    def test_41_hello_world_example_scene(self):
+        text = Text(
+            "Hello World",
+            font_size=100,
+            fill_color=[RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE],
+        )
+        self.play(Materialize(text))
+        self.wait(0.5)
+        self.play(Disintegrate(text))
+        self.wait(0.5)
+
 
 
 # --- Check that TESTS array is correct ---
