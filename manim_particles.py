@@ -142,6 +142,7 @@ class _Scatter(AnimationGroup):
             scene.add(self.vmobject)
 
         super().clean_up_from_scene(scene)
+        scene.remove(self.group)
 
 
 class Disintegrate(_Scatter):
